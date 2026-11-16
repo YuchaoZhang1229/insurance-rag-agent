@@ -101,7 +101,7 @@ docker exec -it   # 运行容器内命令
 - `/etc/nginx/conf`: 配置文件
 - `/usr/share/nginx/html`：静态资源
 
-![img_3.png](../data/image/数据卷.png)
+<img alt="img_3.png" src="../data/image/数据卷.png"/>
 
 当我们创建数据卷的时候，Docker 会自动在宿主机上创建目录 `/var/lib/docker/volumes/[volume_name]/_data`，用于映射容器内的目录。
 
