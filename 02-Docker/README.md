@@ -42,7 +42,7 @@ https://my.feishu.cn/wiki/Cl0RwQI3aiblEhkG05pcNbqtnec
 
 - 镜像仓库（Image Repository）：存放镜像的仓库，可以理解为镜像的仓库地址。
 
-![img.png](../data/image/Docker运行架构.png)
+<img alt="img.png" src="../data/image/Docker运行架构.png"/>
 
 ### 3.2 命令解读
 ```shell
@@ -58,7 +58,8 @@ redis/redis-stack:latest \    # 镜像名称和版本 [repository]:[tag]
 - 浏览器可以打开 `http://localhost:8001` 使用 RedisInsight 管理数据。
 
 ### 3.3 常用命令
-![img.png](../data/image/常用命令.png)
+
+<img alt="img.png" src="../data/image/常用命令.png"/>
 
 #### [操作镜像](https://docs.docker.com/reference/cli/docker/image/)
 ```shell
