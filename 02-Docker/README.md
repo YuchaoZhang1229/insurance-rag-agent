@@ -87,7 +87,80 @@ docker exec -it   # 运行容器内命令
 
 
 ### 3.4 数据卷（volume）
+**数据卷**（Volume）是 Docker 提供的一种数据外部存储方式，是**容器内目录**与**宿主机目录**之间映射的桥梁。数据卷独立于容器的生命周期，即使容器被删除，数据卷中的数据仍然保留。
+- 数据卷管理更方便，可以方便的创建、删除、管理数据卷。 
+- 数据卷独立于容器，容器删除后数据卷仍然保留。 
+- 数据卷可以被多个容器同时使用。 
+- 数据卷可以方便的进行数据备份、迁移。
 
-容器提供程序的运行环境，但是 程序运行产生的数据、程序运行依赖的配置都应该与容器解耦
+
+因此，容器只是提供程序运行的环境，而**程序运行时产生的数据、程序运行依赖的配置都应该与容器解耦**。
+
+#### Nginx 示例
+以Nginx为例，我们知道Nginx中有两个关键的目录：
+- `/etc/nginx/conf`: 配置文件
+- `/usr/share/nginx/html`：静态资源
+
+![img_3.png](../data/image/数据卷.png)
+
+当我们创建数据卷的时候，Docker 会自动在宿主机上创建目录 `/var/lib/docker/volumes/[volume_name]/_data`，用于映射容器内的目录。
+
+> 为什么不让容器目录直接指向宿主机目录呢，而是创建数据卷？
+> - 数据卷相当于中间桥梁，有了数据卷之后，容器和宿主机之间就解耦了，容器只需要知道数据卷的名称，而不需要知道数据卷具体映射到宿主机的目录。
+> - 解耦之后，数据卷就可以方便的进行数据备份、迁移。
+
+
+
+#### 三种常见挂载方式
+| 方式 | 说明 | 适合场景 |
+|---|---|---|
+| Volume | Docker 管理的命名卷，默认存在 `/var/lib/docker/volumes/` | 数据库、日志、持久化数据 |
+| Bind Mount | 挂载宿主机指定目录到容器 | 开发时同步代码、挂载配置文件 |
+
+Volume
+```shell
+# docker volume create html # 没必要手动创建数据卷，因为当创建容器时，遇到数据卷不存在的情况，Docker会自动创建数据卷
+docker run -d --name nginx -p 80:80 -v html:/usr/share/nginx/html nginx:latest
+```
+
+Bind Mout
+```shell
+mkdir -p ./html
+docker run -d --name nginx -p 80:80 -v ./html:/usr/share/nginx/html nginx:latest
+```
+
+#### 常用命令
+```shell
+docker volume create  # 创建数据卷
+docker volume ls      # 列出数据卷
+docker volume rm      # 删除数据卷
+docker volume inspect # 查看数据卷详情
+docker volume prune   # 删除所有未使用的数据卷
+```
+
+#### 教学演示
+Nginx挂载数据卷
+```shell
+docker run -d --name nginx -p 80:80 \
+-v html:/usr/share/nginx/html \
+-v conf:/etc/nginx/conf \
+nginx:latest
+docker volume ls 
+docker volume inspect html
+
+# 进入目录，修改静态资源
+cd /var/lib/docker/volumes/html/_data
+vi index.html
+```
+
+MySQL挂载本地目录
+```shell
+docker run -d --name mysql -p 3306:3306 \
+-e MYSQL_ROOT_PASSWORD=123 -e TZ=Asia/Shanghai   \ 
+-v ./root/mysql/data:/var/lib/mysql              \   # 数据目录
+-v ./root/mysql/conf:/etc/mysql/conf.d           \  # 配置文件
+-v ./root/mysql/init:/docker-entrypoint-initdb.d \  # 初始化脚本
+mysql:8.0
+```
 
 ## 四、Docker Compose
