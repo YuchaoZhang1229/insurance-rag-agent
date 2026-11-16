@@ -1,9 +1,9 @@
 ## Linux
 
 ### 一、目录结构
-Linux的目录结构，如下： 
+Linux的目录结构，如下：
 
-![img.png](../data/image/Linux目录结构.png)
+<img alt="img.png" src="../data/image/Linux目录结构.png"/>
 
 根目录 / 下各个目录的作用及含义说明:  
 
@@ -104,6 +104,7 @@ clear       # 清屏
 ```
 
 ### 三、软件安装
-![img_2.png](../data/image/Linux安装软件.png)
+
+<img alt="img_2.png" src="../data/image/Linux安装软件.png"/>
 
 具体安装 uv、MySQL、Nginx 请参考：https://my.feishu.cn/wiki/RLsywWcgvicSHekggUOcWuhqnTb
