@@ -86,7 +86,7 @@ docker exec -it   # 运行容器内命令
 ```
 
 
-### 3.4 数据卷（volume）
+## 四、数据卷（volume）
 **数据卷**（Volume）是 Docker 提供的一种数据外部存储方式，是**容器内目录**与**宿主机目录**之间映射的桥梁。数据卷独立于容器的生命周期，即使容器被删除，数据卷中的数据仍然保留。
 - 数据卷管理更方便，可以方便的创建、删除、管理数据卷。 
 - 数据卷独立于容器，容器删除后数据卷仍然保留。 
@@ -96,7 +96,7 @@ docker exec -it   # 运行容器内命令
 
 因此，容器只是提供程序运行的环境，而**程序运行时产生的数据、程序运行依赖的配置都应该与容器解耦**。
 
-#### Nginx 示例
+### 4.1 Nginx 示例
 以Nginx为例，我们知道Nginx中有两个关键的目录：
 - `/etc/nginx/conf`: 配置文件
 - `/usr/share/nginx/html`：静态资源
@@ -111,7 +111,7 @@ docker exec -it   # 运行容器内命令
 
 
 
-#### 挂载方式对比
+### 4.2 挂载方式对比
 | 方式               | 说明 | 适合场景 |
 |------------------|---|---|
 | Volume（数据卷）      | Docker 管理的命名卷，默认存在 `/var/lib/docker/volumes/` | 数据库、日志、持久化数据 |
@@ -129,7 +129,7 @@ mkdir -p ./html
 docker run -d --name nginx -p 80:80 -v ./html:/usr/share/nginx/html nginx:latest
 ```
 
-#### 常用命令
+### 4.3 常用命令
 ```shell
 docker volume create  # 创建数据卷
 docker volume ls      # 列出数据卷
@@ -138,7 +138,7 @@ docker volume inspect # 查看数据卷详情
 docker volume prune   # 删除所有未使用的数据卷
 ```
 
-#### 教学演示
+### 4.4 教学演示
 Nginx挂载数据卷
 ```shell
 docker run -d --name nginx -p 80:80 \
@@ -163,4 +163,22 @@ docker run -d --name mysql -p 3306:3306 \
 mysql:8.0
 ```
 
-## 四、Docker Compose
+## 五、自定义镜像
+### 5.1 镜像结构
+自定义镜像本质就是依次准备好**程序运行的环境、依赖、应用本身、运行配置等文件**，并且打包而成
+
+构建一个Python镜像的步骤：
+1. Linux 运行环境
+2. 安装 Python、UV
+3. 拷贝 Python 源码
+4. 编写启动脚本
+
+<img alt="镜像分层结构.png" src="../data/image/镜像分层结构.png"/>
+
+### 5.2 Dockerfile
+
+
+
+
+
+## 六、Docker Compose
