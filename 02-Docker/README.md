@@ -176,9 +176,185 @@ mysql:8.0
 <img alt="镜像分层结构.png" src="../data/image/镜像分层结构.png"/>
 
 ### 5.2 Dockerfile
+用 Dockerfile 来描述每层内容，Docker 会根据 Dockerfile 生成镜像
+
+| 指令 | 说明 | 示例 |
+| :--- | :--- | :--- |
+| **FROM** | 指定基础镜像 | `FROM centos:7` |
+| **ENV** | 设置环境变量，可在后面指令使用 | `ENV key value` |
+| **COPY** | 拷贝本地文件到镜像的指定目录 | `COPY ./hm.tar /tmp` |
+| **RUN** | 执行Linux的shell命令，一般是安装过程的命令 | `RUN tar -xvf /tmp/hm.tar && pip install uv && uv sync` |
+| **EXPOSE** | 指定容器运行时监听的端口，是给镜像使用者看的 | `EXPOSE 8000` |
+| **ENTRYPOINT** | 镜像中应用的启动命令，容器运行时调用 | `ENTRYPOINT uv run xxx` |
+
+例如，要基于 python:3.12-slim 镜像来构建一个 Python 应用，其 Dockerfile 内容如下：
+```dockerfile
+# 使用 python:3.12-slim 作为基础镜像
+From python:3.12-slim
+# 设置应用目录
+WORKDIR /app 
+# 安装 uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# 拷贝依赖管理文件
+COPY pyproject.toml ./
+# 安装依赖
+RUN uv sync --no-dev
+# 拷贝源码
+COPY src/ ./src/
+# 暴露端口
+EXPOSE 8000
+# 运行命令
+ENTRYPOINT ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+Dockerfile文件编写好了之后，就可以使用如下命令来构建镜像了。
+```shell
+docker build -t [镜像名]:[标签] .
+```
+- `-t [repository]:[tag]`：是给镜像起名，不指定tag时，默认为latest
+- `.`：是指定Dockerfile所在目录，如果就在当前目录，则指定为"."
+
+```shell
+docker build -t backend .
+docker run -d --name backend -p 8000:8000 backend --env-file .env.prod
+```
+
+## 六、网络互联
+### 6.1 基础命令
+| 命令 | 说明 |
+| :--- | :--- |
+| `docker network create` | 创建一个网络 |
+| `docker network ls` | 查看所有网络 |
+| `docker network rm` | 删除指定网络 |
+| `docker network prune` | 清除未使用的网络 |
+| `docker network connect` | 使指定容器连接加入某网络 |
+| `docker network disconnect` | 使指定容器连接离开某网络 |
+| `docker network inspect` | 查看网络详细信息 |
 
 
+### 6.2 教学演示
+```shell
+docker network create my_network
+docker network ls
+docker network connect my_network backend
+docker network connect my_network mysql
+docker network connect my_network nginx
+```
 
+再重新创建 backend，并且加入网络
+```shell
+docker run --name backend -p 8000:8000 --env-file .env.prod --network my_network -d backend
+```
 
+## 七、Docker Compose
+Docker Compose就可以帮助我们实现**多个相互关联的Docker容器的快速部署**
 
-## 六、Docker Compose
+### 7.1 基础语法
+
+| docker run 参数 | docker compose 指令 | 说明 |
+| :--- | :--- | :--- |
+| `--name` | `container_name` | 容器名称 |
+| `-p` | `ports` | 端口映射 |
+| `-e` | `environment` | 环境变量 |
+| `-v` | `volumes` | 数据卷配置 |
+| `--network` | `networks` | 网络 |
+
+举例来说，用docker run部署Nginx的命令如下：
+
+```shell
+docker run -d \
+ --name chatbot-frontend\
+ -v /root/robot/frontend/public:/usr/share/nginx/html \
+ -v /root/robot/frontend/nginx.conf:/etc/nginx/nginx.conf \
+ --network my_network \
+ -p 80:80 \
+nginx:latest
+```
+
+如果用 `docker-compose.yml` 文件来定义，就是这样：
+
+```yaml
+services:
+  frontend:
+    image: "nginx:latest"
+    container_name: chatbot-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - "/root/robot/frontend/public:/usr/share/nginx/html"
+      - "/root/robot/frontend/nginx.conf:/etc/nginx/nginx.conf"
+    networks:
+      - my_network
+networks:
+  my_network:
+    name: my_network
+```
+### 7.2 基础命令
+编写好 `docker-compose.yml` 文件，就可以部署项目了。语法如下：
+```shell
+docker compose [OPTIONS] [COMMAND]
+```
+其中，OPTIONS和COMMAND都是可选参数，比较常见的有：
+
+| 类型 | 参数或指令 | 说明 |
+| :--- | :--- | :--- |
+| Options | `-f` | 指定compose文件的路径和名称 |
+| Options | `-p` | 指定project名称。project就是当前compose文件中设置的多个service的集合，是逻辑概念 |
+| Commands | `up` | 创建并启动所有service容器 |
+| Commands | `down` | 停止并移除所有容器、网络 |
+| Commands | `ps` | 列出所有启动的容器 |
+| Commands | `logs` | 查看指定容器的日志 |
+| Commands | `stop` | 停止容器 |
+| Commands | `start` | 启动容器 |
+| Commands | `restart` | 重启容器 |
+| Commands | `top` | 查看运行的进程 |
+| Commands | `exec` | 在指定的运行中容器中执行命令 |
+
+### 7.3 教学演示
+```yaml
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: chatbot-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: robot
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: chatbot-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    image: nginx:latest
+    container_name: chatbot-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/public:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+```
+
+```shell
+docker compose up -d
+```
