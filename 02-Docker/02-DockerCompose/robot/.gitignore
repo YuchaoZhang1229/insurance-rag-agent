@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Platform-specific lock file
+uv.lock
+
+
+# Environment variables
+backend/.env
+.env.prod
+
+.gitignore
+.dockerignore
+
+
+
+

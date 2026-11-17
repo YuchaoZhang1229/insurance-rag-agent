@@ -1,0 +1,27 @@
+# 1. 排除版本控制系统
+.git
+.gitignore
+
+# 2. 排除 Python 依赖管理和缓存
+.venv
+__pycache__
+*.pyc
+.egg-info
+dist
+build
+
+# 3. 排除环境变量文件（非常重要，防止密码/密钥进镜像）
+.env
+.env.local
+.env.*
+
+# 4. 排除系统生成文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# 5. 排除 Docker 自身配置文件
+Dockerfile
+docker-compose*.yml
+docker-compose*.yaml

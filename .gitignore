@@ -56,3 +56,14 @@ htmlcov/
 .DS_Store
 Thumbs.db
 /09-LLamaIndex/
+
+# Platform-specific lock file
+uv.lock
+
+.gitignore
+.dockerignore
+
+
+
+
+
