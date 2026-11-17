@@ -14,7 +14,7 @@ uv.lock
 
 
 # Environment variables
-backend/.env
+.env
 .env.prod
 
 .gitignore

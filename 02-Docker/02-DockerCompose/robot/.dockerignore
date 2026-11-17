@@ -11,7 +11,7 @@ dist
 build
 
 # 3. 排除环境变量文件（非常重要，防止密码/密钥进镜像）
-backend/.env
+.env
 .env.local
 .env.*
 
