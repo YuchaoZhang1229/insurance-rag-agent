@@ -11,7 +11,7 @@ npm run dev
 
 
 
-## 后端 agent-service 项目搭建
+## 后端 agent-service 项目搭建，安装依赖
 
 修改pyproject.toml文件，内容如下：
 ```toml
@@ -44,7 +44,7 @@ dependencies = [
     "pyjwt>=2.13.0",
     "pymilvus>=3.0.0",
     "pypdf>=6.14.2",
-    "sqlalchemy>=2.0.51",
+    "sqlalchemy[asyncio]>=2.0.51",
     "structlog>=26.1.0",
     "uvicorn>=0.51.0",
 ]

@@ -2,10 +2,6 @@
 ## 一、学习目标
 - 能说出项目背景和系统架构
 - 会用 Docker Compose 启动基础设施
-- 理解项目结构和 pydantic-settings 配置管理
-- 能使用FastAPI的生命周期管理数据库连接
-- 能使用SqlAlchemy实现保险查询功能
-
 
 ## 二、项目背景和系统架构
 
