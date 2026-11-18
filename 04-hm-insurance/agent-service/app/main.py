@@ -1,9 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings                           # 配置管理
 from app.core.logging import configure_logging, get_logger     # 日志管理
 from contextlib import asynccontextmanager                     # 数据库连接池管理
-from fastapi.middleware.cors import CORSMiddleware
+from app.modules.product.router import product_router
+
+
 
 # 初始化日志系统
 configure_logging(settings.logging.level)
@@ -29,6 +32,18 @@ app = FastAPI(
     debug=settings.app.debug,
     lifespan=lifespan,
 )
+
+# 跨域资源共享（CORS）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],      # 允许访问的源
+    allow_credentials=True,   # 允许携带 Cookie
+    allow_methods=["*"],      # 允许所有 HTTP 请求方法
+    allow_headers=["*"],      # 允许所有请求头
+)
+
+# 路由注册
+app.include_router(product_router)
 
 @app.get("/health", summary="健康检测接口")
 async def health_check() -> dict[str, str]:

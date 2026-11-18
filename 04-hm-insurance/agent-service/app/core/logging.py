@@ -1,10 +1,24 @@
 from __future__ import annotations
-
 import logging
 import sys
 from typing import Any
-
 import structlog
+
+# ===== 新增：颜色常量 =====
+_RESET = "\033[0m"
+_LOGGER_COLOR = "\033[36m"   # 青色，用于 [logger] 名
+# ===== 新增结束 =====
+
+# ===== 新增：把 logger 名移到消息前面 =====
+def _move_logger_name_to_event(logger, method_name, event_dict: dict) -> dict:
+    """把 logger 名移到消息前面，只给 logger 名上色。"""
+    logger_name = event_dict.pop("logger", None) or event_dict.pop("logger_name", None)
+    event = event_dict.get("event", "")
+    if logger_name:
+        # 只给 [logger] 名加颜色，消息正文保持原样
+        event_dict["event"] = f"{_LOGGER_COLOR}[{logger_name}]{_RESET} {event}"
+    return event_dict
+# ===== 新增结束 =====
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -41,6 +55,9 @@ def configure_logging(level: str = "INFO") -> None:
         structlog.processors.StackInfoRenderer(),
         # 渲染异常堆栈
         structlog.processors.format_exc_info,
+        # ===== 新增开始 =====
+        _move_logger_name_to_event,
+        # ===== 新增结束 =====
         # 彩色控制台渲染
         structlog.dev.ConsoleRenderer(colors=True),
     ]
