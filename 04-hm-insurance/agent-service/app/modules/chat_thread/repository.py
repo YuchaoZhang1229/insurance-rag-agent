@@ -19,3 +19,15 @@ class ChatThreadRepository:
         self.db.add(chat_thread)
         # commit 操作放到 service 层去做
 
+    """ 需求2：查询会话列表 """
+    async def find_by_user_id(self, user_id: int) -> list[ChatThreads]:
+        query = (
+            select(ChatThreads)
+            .where(ChatThreads.user_id == user_id)
+            .order_by(
+                ChatThreads.updated_at.desc(),
+                ChatThreads.created_at.desc(),
+            )
+        )
+        result = await self.db.execute(query)
+        return result.scalars().all()

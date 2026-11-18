@@ -22,3 +22,8 @@ class ChatThreadService:
             chat_thread = ChatThreads(user_id=user_id, title=title)
             await self.repository.add(chat_thread)
             return chat_thread
+
+    """ 需求2：查询会话列表 """
+    async def list_chat_threads(self, user_id: int) -> list[ChatThreads]:
+        products = await self.repository.find_by_user_id(user_id)
+        return products

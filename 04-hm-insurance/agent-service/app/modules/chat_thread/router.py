@@ -24,9 +24,20 @@ async def create_chat_thread(
         user_id: Annotated[int, Header(alias="x-user-id")],
         service: ChatThreadService = Depends(get_service)
 ) -> ChatThreadResponse:
-    logger.info(f"新建会话：用户ID-{user_id}, 会话名称-{user_input.title}")
+    logger.info(f"新建会话：用户ID：{user_id}, 会话名称：{user_input.title}")
     res = await service.create_chat_thread(user_id, user_input.title)
     res = ChatThreadResponse.model_validate(res)
     logger.info(f"新建会话：{res}")
     return res
 
+""" 需求2：查询会话列表 """
+@chat_thread_router.get("/", response_model=list[ChatThreadResponse])
+async def get_products(
+        user_id: Annotated[int, Header(alias="x-user-id")],
+        service: ChatThreadService = Depends(get_service)
+) -> ChatThreadResponse:
+    logger.info(f"查询会话列表，用户ID：{user_id}")
+    chat_threads = await service.list_chat_threads(user_id)
+    res = [ChatThreadResponse.model_validate(chat_thread) for chat_thread in chat_threads]
+    logger.info(f"获取产品类别，结果：{res}")
+    return res
