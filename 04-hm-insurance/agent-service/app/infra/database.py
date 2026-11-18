@@ -2,9 +2,9 @@ from collections.abc import AsyncGenerator
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
+    create_async_engine, # 1. 创建异步引擎
+    async_sessionmaker,  # 2. 创建异步 Session 工厂
+    AsyncSession,        # 3. 创建异步 Session
 )
 
 from app.core.config import settings
@@ -34,8 +34,8 @@ AsyncSessionFactory = async_sessionmaker(
 )
 
 # 4. 获取session的工具
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """ 为每个 FastAPI 请求创建独立的 AsyncSession，适用于依赖注入。"""
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """ 为每个 FastAPI 请求创建独立的 AsyncSession，适用于依赖注入。后续作为参数使用 db: AsyncSession = Depends(get_db)"""
     async with AsyncSessionFactory() as session:
         yield session
 
@@ -45,7 +45,7 @@ async def close_database() -> None:
     await engine.dispose()
     logger.info("数据库连接池已关闭~")
 
-# 6. 数据库健康检查
+# 6. 初始化数据库连接池
 async def check_database() -> None:
     async with engine.connect() as connection:
         await connection.execute(text("SELECT 1"))
