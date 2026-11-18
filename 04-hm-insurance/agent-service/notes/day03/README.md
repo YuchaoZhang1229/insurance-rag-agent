@@ -3,6 +3,8 @@
 - 能使用 FastAPI 的生命周期管理数据库连接
 - 能使用 SqlAlchemy 实现保险查询功能
 
+## 项目初始化
+
 ### 一、项目结构
 项目按照职责划分不同的包和模块
 - core：核心模块
@@ -156,5 +158,177 @@ app = FastAPI(
 )
 ```
 
+## 业务开发
+
+### 一、开发规范
+
+#### 1.1 前后端分离架构
+- **前端**：负责渲染页面，展示数据
+- **后端**：负责提供前端展示所需的数据，例如商品信息、用户信息等
+
+<img alt="前后端分离架构.png" src="../../../../data/image/前后端分离架构.png"/>
+
+#### 1.2 接口文档
+- [保险业务接口文档](https://my.feishu.cn/wiki/VCv6wzhr2i94KCkj7Bwc4GkdnNc)：与保险相关的业务接口，如登录、注册、保险商品查询等
+- [智能客服接口文档](https://my.feishu.cn/wiki/XxdQwOlDpiaRRMk2thYcVEOKnte)：与AI智能客服相关接口，如会话管理、对话聊天等
+
+当然，完整的保险业务接口非常多，我们并不需要全都开发，目前只需要做下面几个与保险产品（Product）有关的接口：
+- **6.1.查询产品列表**
+- **6.2.查询推荐候选产品**
+
+后续可以继续完成其它接口
+
+#### 1.3 开发流程
+
+业务功能放到 `app.modules` 包中，不同业务创建子包
+- 产品接口：`product`
+- 认证接口：`auth`
+- 保费测算接口：calculate
+- 保险方案接口：insurance-plans
+- 保单接口：policies
+- 理赔接口：claims
+- 订单接口：orders
+
+在每个子包下，又包含 `schemas`、`router`、`service`、`repository`、`models`等模块，模块间的关系如下：
+
+<img alt="业务模块请求完成流程.png" src="../../../../data/image/业务模块请求完成流程.png"/>
+
+- `schemas` 是按照接口文档规范定义的请求和响应约束模型
+- `models` 是数据库表映射类，这两类数据在各层间传递，需要先定义出来
+- 开发业务时从底层的 `repository` 开始，逐层向上开发
+
+### 二、产品接口
+
+#### 2.1 查询产品列表
+##### Models
+`products` 表的 DDL 语句见 `products.sql`, 参考表结构来定义 model 即可
 
 
+首先先统一SQLAlchemy的基类和混入类，创建 `app.common.models` 文件，并添加以下内容：
+```python
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from datetime import datetime
+from sqlalchemy import DateTime, func
+
+# SQLAlchemy的基类，所有数据库表模型都必须继承
+class Base(DeclarativeBase):
+    def __repr__(self) -> str:
+        """通用的repr函数，用于控制台输出对象信息"""
+        # 获取当前类名
+        cls_name = self.__class__.__name__
+        # 保存属性 key（属性）：value（值）
+        attrs = {}
+        # 遍历对象的所有属性
+        for key, val in vars(self).items():
+            # 过滤掉 SQLAlchemy 内部以 _ 开头的私有属性
+            if key.startswith("_"):
+                continue
+            # 时间类型格式化
+            if isinstance(val, datetime):
+                attrs[key] = val.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                attrs[key] = val
+        # 拼成最终字符串，如：Product({'id': 1, 'name': '重疾险A', ...})
+        return f"{cls_name}({attrs})"
+
+# 通用的时间戳【混入类】，这样其它数据模型不用重复定义时间相关字段
+class CreateAtMixin:
+    # func.now() 会让数据库在插入时自动生成服务器时间（如 PostgreSQL 的 NOW()）
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), comment="创建时间")
+
+class UpdateAtMixin:
+    # onupdate=func.now() 会在每次数据行被 UPDATE 时，由 SQLAlchemy 自动更新该字段
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now(), comment="最后更新时间")
+```
+定义 products 表的 ORM 模型，创建 `app.module.product.models` 文件，并添加以下内容：
+```python
+from decimal import Decimal
+from sqlalchemy import Index, BigInteger, String, Text, Numeric, ARRAY, CheckConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+from app.common.models import Base, CreateAtMixin, UpdateAtMixin
+
+
+""" 产品表的 ORM 模型 """
+class Products(Base, CreateAtMixin, UpdateAtMixin):
+
+    __tablename__ = 'products'
+
+    # 创建索引
+    __table_args__ = (
+        CheckConstraint("category IN ('medical', 'critical_illness', 'accident', 'life')", name="chk_products_category"),
+        Index("idx_products_category", "category"),
+        Index("idx_products_status", "status"),
+        {"comment": "保险商城在售及历史保险产品"}
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="产品主键")
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="商城展示名称")
+    clause_name: Mapped[str] = mapped_column(String(300), nullable=False, comment="主条款文件名，包含 .pdf 后缀")
+    category: Mapped[str] = mapped_column(String(50), nullable=False, comment="险种分类：医疗、重疾、意外或寿险")
+    insurer: Mapped[str] = mapped_column(String(120), nullable=False, comment="承保保险公司")
+
+    image_url: Mapped[str | None] = mapped_column(Text, comment="产品展示图片地址")
+    description: Mapped[str| None] = mapped_column(Text, comment="产品简介")
+    min_premium: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), comment="产品公开的最低年缴保费参考")
+    max_premium: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), comment="产品公开的最高保费参考，可为空")
+    target_group: Mapped[str| None] = mapped_column(String(300), comment="适用人群说明")
+    highlights: Mapped[list[str] | None] = mapped_column(ARRAY(Text), comment="产品亮点列表")
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="active", comment="产品状态")
+    # created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), comment="创建时间")
+    # updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now(), comment="最后更新时间")
+```
+> 注意：金额字段在数据库中是 `NUMERIC(14, 2)`，Model 使用 `Decimal` 可以避免浮点误差
+
+##### Repository
+Repository 只负责数据库访问——crud 操作，不涉及任何业务逻辑
+
+创建 `app.module.product.repository` 文件，并添加以下内容：
+```python
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.modules.product.models import Products
+
+""" 需求1：查询产品列表 """
+class ProductRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def find_by_category(self, category: str | None = None) -> list[Products]:
+        # 1.组装查询条件
+        # 1.1.默认只查询active状态的产品
+        conditions = [Products.status == "active"]
+        # 1.2.如果有category，则添加category过滤
+        if category:
+            conditions.append(Products.category == category)
+
+        # 2.查询产品列表
+        query = select(Products).where(*conditions).order_by(Products.id.asc())
+        products = await self.db.scalars(query)
+        return products.all()
+```
+
+##### Service
+Service 层负责业务逻辑处理
+- 调用 Repository 层进行数据库访问
+- 开启事务(如果需要的话)
+创建 `app.module.product.service` 文件，并添加以下内容：
+
+```python
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.logging import get_logger
+from app.modules.product.repository import ProductRepository
+from app.modules.product.models import Products
+
+logger = get_logger(__name__)
+
+
+class ProductService:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.repository = ProductRepository(session)
+
+    async def list_products(self, category: str | None = None) -> list[Products]:
+        products = await self.repository.find_by_category(category)
+        logger.info(f"产品列表：{products}")
+        return products
+```
