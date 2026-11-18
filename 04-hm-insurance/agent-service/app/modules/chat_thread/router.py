@@ -17,6 +17,7 @@ chat_thread_router = APIRouter(prefix="/api/v1/chat-threads")
 def get_service(session: AsyncSession = Depends(get_db)):
     return ChatThreadService(session)
 
+""" 需求1：创建会话 """
 @chat_thread_router.post("/", response_model=ChatThreadResponse)
 async def create_chat_thread(
         user_input: ChatThreadRequest,
@@ -28,3 +29,4 @@ async def create_chat_thread(
     res = ChatThreadResponse.model_validate(res)
     logger.info(f"新建会话：{res}")
     return res
+

@@ -29,3 +29,20 @@ app/modules/chat_thread/
 ├── schemas.py
 └── service.py
 ```
+
+### 创建会话
+
+<img alt="创建会话.png" src="创建会话.png" width="1000"/>
+
+### 查询会话列表
+
+<img alt="查询会话列表.png" src="查询会话列表.png" width="1000"/>
+
+
+### 重命名会话
+
+<img alt="img_2.png" src="重命名会话.png" width="1000"/>
+
+### 删除会话
+
+<img alt="删除会话.png" src="删除会话.png" width="1000"/>
