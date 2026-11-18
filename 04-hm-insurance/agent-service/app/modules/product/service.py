@@ -15,7 +15,7 @@ class ProductService:
         self.session = session
         self.repository = ProductRepository(session)
 
+    """ 需求1：查询产品列表 """
     async def list_products(self, category: str | None = None) -> list[Products]:
         products = await self.repository.find_by_category(category)
-        logger.info(f"产品列表：{products}")
         return products

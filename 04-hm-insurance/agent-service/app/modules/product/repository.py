@@ -8,12 +8,11 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-
-""" 需求1：查询产品列表 """
 class ProductRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    """ 需求1：查询产品列表 """
     async def find_by_category(self, category: str | None = None) -> list[Products]:
         # 1.组装查询条件
         # 1.1.默认只查询active状态的产品
@@ -25,5 +24,4 @@ class ProductRepository:
         # 2.查询产品列表
         query = select(Products).where(*conditions).order_by(Products.id.asc())
         products = (await self.db.scalars(query)).all()
-        logger.info(f"产品列表：{products}")
         return products
