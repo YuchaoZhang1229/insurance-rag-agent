@@ -19,5 +19,5 @@ class ProductResponse(BaseModel):
     status: str
 
     model_config = ConfigDict(
-        from_attributes=True,  # 允许从 ORM 对象属性中取值
+        from_attributes=True,  # 允许从其他对象（ORM、普通类）属性中取值
     )

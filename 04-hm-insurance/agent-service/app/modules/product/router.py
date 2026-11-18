@@ -19,4 +19,4 @@ async def get_products(category: str | None = None, db: AsyncSession = Depends(g
     logger.info(f"获取产品列表，类别：{category}")
     products = await service.list_products(category)
     logger.info(f"产品列表：{products}")
-    return products
+    return [ProductResponse.model_validate(product) for product in products]

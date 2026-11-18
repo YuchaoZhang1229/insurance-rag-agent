@@ -311,7 +311,8 @@ class ProductRepository:
 Service 层负责业务逻辑处理
 - 调用 Repository 层进行数据库访问
 - 开启事务(如果需要的话)
-创建 `app.module.product.service` 文件，并添加以下内容：
+
+- 创建 `app.module.product.service` 文件，并添加以下内容：
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -332,3 +333,86 @@ class ProductService:
         logger.info(f"产品列表：{products}")
         return products
 ```
+
+
+##### Schemas
+定义请求和响应的约束模型，严格按照接口文档要求定义即可
+
+创建 `app.module.product.schemas` 文件，并添加以下内容：
+```python
+from decimal import Decimal
+from pydantic import BaseModel, ConfigDict
+
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    clause_name: str
+    category: str
+    insurer: str
+    image_url: str
+    description: str
+    min_premium: Decimal  | None
+    max_premium: Decimal  | None
+    target_group: str | None
+    highlights: list[str] | None
+    status: str
+
+    model_config = ConfigDict(
+        from_attributes=True,  # 允许从 ORM 对象属性中取值
+    )
+```
+
+##### Router
+Router 只负责 HTTP 层：声明路径、接收并校验查询参数、注入数据库会话，然后把请求交给 Service 层处理
+
+创建 `app.module.product.router` 文件，并添加以下内容：
+```python
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.infra.database import get_db
+from app.core.logging import get_logger
+from app.modules.product.service import ProductService
+from app.modules.product.schemas import ProductResponse
+
+logger = get_logger(__name__)
+product_router = APIRouter(prefix="/api/v1/products")
+
+
+@product_router.get("/", response_model=list[ProductResponse])
+async def get_products(category: str | None = None, db: AsyncSession = Depends(get_db)) -> list[ProductResponse]:
+    service = ProductService(db)
+    logger.info(f"获取产品列表，类别：{category}")
+    products = await service.list_products(category)
+    logger.info(f"产品列表：{products}")
+    return products
+```
+
+##### 注册路由
+在 main.py 文件中注册路由
+```python
+from app.module.product.router import product_router
+app.include_router(product_router)
+```
+
+
+##### 依赖注入
+Router中获取service的代码是手动创建对象，如果接口较多，每个接口都手动创建比较麻烦，可以将获取service的代码抽取为函数，通过依赖注入来获取：
+
+```python
+async def get_product_service(
+    session: AsyncSession = Depends(get_session),
+) -> ProductService:
+    return ProductService(session)
+
+
+@router.get("", response_model=list[ProductResponse])
+async def list_products(
+    category: str | None = None,
+    service: ProductService = Depends(get_product_service),
+) -> list[ProductResponse]:
+    return await service.list_products(category)
+```
+
+- Router 依赖 Service，Service 依赖 Session，这些对象都可以通过依赖注入获取：
+  - 定义 `get_product_service` 函数，通过依赖注入获取 `session`，再创建 `ProductService`。
+  - 在 `list_products` 的参数列表中，通过依赖注入获取 `service`。
