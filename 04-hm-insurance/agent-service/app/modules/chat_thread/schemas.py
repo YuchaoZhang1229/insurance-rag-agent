@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-class ChatThreadRequest(BaseModel):
+class ChatThreadCreate(BaseModel):
     title: str = Field(default="新会话", min_length=1, max_length=200)
 
     @field_validator("title", mode="before")

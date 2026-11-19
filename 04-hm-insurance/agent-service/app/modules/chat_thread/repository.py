@@ -1,6 +1,7 @@
 """
 数据库的 crud 操作
 """
+from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.chat_thread.models import ChatThreads
@@ -31,3 +32,7 @@ class ChatThreadRepository:
         )
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    """ 需求3：重命名会话 """
+    async def find_by_thread_id(self, thread_id: UUID) -> ChatThreads | None:
+        return await self.db.get(ChatThreads, thread_id)

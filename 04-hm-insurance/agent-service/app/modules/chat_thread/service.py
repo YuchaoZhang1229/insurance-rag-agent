@@ -1,11 +1,12 @@
 """
 业务逻辑开发
 """
-
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import get_logger
 from app.modules.chat_thread.repository import ChatThreadRepository
 from app.modules.chat_thread.models import ChatThreads
+from app.modules.chat_thread.exceptions import ChatThreadNotFoundError
 
 logger = get_logger(__name__)
 
@@ -27,3 +28,17 @@ class ChatThreadService:
     async def list_chat_threads(self, user_id: int) -> list[ChatThreads]:
         products = await self.repository.find_by_user_id(user_id)
         return products
+
+    """ 需求3：重命名会话 """
+    async def rename_chat_threads(self, thread_id: UUID, user_id: int, title: str):
+        logger.info(f"{thread_id}")
+        async with self.session.begin():
+            chat_thread = await self.repository.find_by_thread_id(thread_id)
+
+            if not chat_thread or chat_thread.user_id != user_id:
+                raise ChatThreadNotFoundError
+            chat_thread.title = title
+
+            await self.session.refresh(chat_thread)
+
+            return chat_thread
