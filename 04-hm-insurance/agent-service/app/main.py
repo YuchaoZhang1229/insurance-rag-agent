@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings                           # 配置管理
 from app.core.logging import configure_logging, get_logger     # 日志管理
 from contextlib import asynccontextmanager                     # 数据库连接池管理
+from app.core.exceptions import register_exception_handlers    # 异常处理注册
 from app.modules.product.router import product_router
 from app.modules.chat_thread.router import chat_thread_router
 
@@ -45,6 +46,12 @@ app.add_middleware(
 # 路由注册
 app.include_router(product_router)
 app.include_router(chat_thread_router)
+
+# 全局异常处理注册
+register_exception_handlers(app)
+
+
+
 
 @app.get("/health", summary="健康检测接口")
 async def health_check() -> dict[str, str]:
