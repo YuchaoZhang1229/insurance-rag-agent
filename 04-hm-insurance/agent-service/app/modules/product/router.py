@@ -2,7 +2,7 @@
 校验请求参数，返回响应结果
 """
 from decimal import Decimal
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infra.database import get_db
 from app.core.logging import get_logger
@@ -30,9 +30,9 @@ async def get_products(
 """ 需求2：查询推荐候选产品 """
 @product_router.get("/candidates", response_model = list[ProductResponse])
 async def get_candidate_products(
-        categories: list[str],                   # 产品类别
-        premium_min: Decimal | None = None,    # 只返回最低保费小于该值的产品
-        limit_per_category: int = 5,           # 每个类别最多返回的数量
+        categories: list[str] = Query(min_length=1),     # 产品类别
+        premium_min: Decimal | None = None,              # 只返回最低保费小于该值的产品
+        limit_per_category: int = 5,                     # 每个类别最多返回的数量
         service: ProductService = Depends(get_product_service)
 ) -> list[ProductResponse]:
     logger.info(f"获取候选产品列表")
