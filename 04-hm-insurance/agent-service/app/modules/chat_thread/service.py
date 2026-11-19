@@ -36,8 +36,9 @@ class ChatThreadService:
 
             if not chat_thread or chat_thread.user_id != user_id:
                 raise ChatThreadNotFoundError
-            chat_thread.title = title
+            chat_thread.title = title # update_at 还不是最新的
 
+            # update_at 字段由数据库生成，需要刷新数据 flush + refresh
             await self.session.flush()
             await self.session.refresh(chat_thread)
 
