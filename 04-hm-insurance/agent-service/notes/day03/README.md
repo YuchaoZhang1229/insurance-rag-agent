@@ -416,3 +416,8 @@ async def list_products(
 - Router 依赖 Service，Service 依赖 Session，这些对象都可以通过依赖注入获取：
   - 定义 `get_product_service` 函数，通过依赖注入获取 `session`，再创建 `ProductService`。
   - 在 `list_products` 的参数列表中，通过依赖注入获取 `service`。
+
+#### 2.2 查询候选产品（作业）
+- **真实保险推荐业务**：抽取所有保险产品的特惠装呢个，然后基于用户画像寻找合适方案
+- **简化版本**：直接从数据库中查询符合用户需求的产品（按照险种、预算、数量筛选），然后由AI来推荐
+- [接口文档](https://my.feishu.cn/wiki/CxtZwovRbiJf72kIQflc2Baon8f)
