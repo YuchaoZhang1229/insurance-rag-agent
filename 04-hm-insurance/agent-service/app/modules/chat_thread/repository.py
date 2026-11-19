@@ -36,3 +36,7 @@ class ChatThreadRepository:
     """ 需求3：重命名会话 """
     async def find_by_thread_id(self, thread_id: UUID) -> ChatThreads | None:
         return await self.db.get(ChatThreads, thread_id)
+
+    """ 需求4：删除会话 """
+    async def delete(self, thread: ChatThreads) -> None:
+        await self.db.delete(thread)

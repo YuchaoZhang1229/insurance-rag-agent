@@ -25,13 +25,12 @@ class ChatThreadService:
             return chat_thread
 
     """ 需求2：查询会话列表 """
-    async def list_chat_threads(self, user_id: int) -> list[ChatThreads]:
+    async def get_chat_threads(self, user_id: int) -> list[ChatThreads]:
         products = await self.repository.find_by_user_id(user_id)
         return products
 
     """ 需求3：重命名会话 """
-    async def rename_chat_threads(self, thread_id: UUID, user_id: int, title: str):
-        logger.info(f"{thread_id}")
+    async def rename_chat_thread(self, thread_id: UUID, user_id: int, title: str):
         async with self.session.begin():
             chat_thread = await self.repository.find_by_thread_id(thread_id)
 
@@ -39,6 +38,15 @@ class ChatThreadService:
                 raise ChatThreadNotFoundError
             chat_thread.title = title
 
+            await self.session.flush()
             await self.session.refresh(chat_thread)
 
             return chat_thread
+
+    """ 需求4：删除会话 """
+    async def delete_chat_thread(self, thread_id: UUID, user_id: int):
+        async with self.session.begin():
+            chat_thread = await self.repository.find_by_thread_id(thread_id)
+            if not chat_thread or chat_thread.user_id != user_id:
+                raise ChatThreadNotFoundError
+            await self.repository.delete(chat_thread)
