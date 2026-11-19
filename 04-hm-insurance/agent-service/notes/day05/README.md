@@ -22,9 +22,8 @@ Agent = LLM + 规划 + 工具 + 迭代执行 + 记忆
 
 Tool Calling 技术原理
 
-![tool_calling.png](../../../../data/image/tool_calling.png)
+<img alt="tool_calling.png" src="../../../../data/image/tool_calling.png"/>
 
-E:\Agent\insurance-rag-agent\data\image\tool_calling.png
 
 ## 二、认识 LangChain
 
