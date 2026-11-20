@@ -1,4 +1,4 @@
-## 学习目标：
+## LangChain 学习目标：
 - 知道 `Tool Calling` 原理
 - 会使用 LangChain 创建 Agent
 - 会使用 LangChain 实现流式输出
