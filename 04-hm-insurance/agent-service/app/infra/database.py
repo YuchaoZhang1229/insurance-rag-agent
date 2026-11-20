@@ -43,10 +43,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def close_database() -> None:
     """ 关闭数据库引擎并释放连接池中的连接。应在应用关闭时调用。"""
     await engine.dispose()
-    logger.info("数据库连接池已关闭~")
+    logger.info("SQLAlchemy 连接池已关闭~")
 
 # 6. 初始化数据库连接池
 async def check_database() -> None:
     async with engine.connect() as connection:
         await connection.execute(text("SELECT 1"))
-    logger.info("数据库连接池初始化成功~✅️")
+    logger.info("SQLAlchemy 连接池已打开~✅️")
