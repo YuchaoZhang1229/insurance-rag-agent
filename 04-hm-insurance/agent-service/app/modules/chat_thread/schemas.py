@@ -5,6 +5,7 @@
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Literal
 
 class ChatThreadCreate(BaseModel):
     title: str = Field(default="新会话", min_length=1, max_length=200)
@@ -28,3 +29,13 @@ class ChatThreadResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,  # 允许从其他对象（ORM、普通类）属性中取值
     )
+
+class ChatMessageResponse(BaseModel):
+    """历史消息"""
+    role: Literal["user", "assistant"]
+    content: str
+
+class ChatHistoryResponse(BaseModel):
+    """会话历史响应"""
+    thread_id: UUID
+    messages: list[ChatMessageResponse]

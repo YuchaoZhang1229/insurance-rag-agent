@@ -8,6 +8,7 @@ if sys.platform == "win32":
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_core.messages import messages_to_dict
 from app.core.config import settings
 from dotenv import load_dotenv
 
@@ -74,6 +75,8 @@ async def main():
     snapshot = await agent.aget_state(config)
     print("✅ 会话状态获取成功")
     print(snapshot)
+
+    print(messages_to_dict(snapshot.values["messages"]))
 
     # 2. 删除快照 checkpointer.adelete_thread(thread_id)
     thread_id = config["configurable"]["thread_id"]

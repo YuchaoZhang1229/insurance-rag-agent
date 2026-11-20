@@ -248,9 +248,9 @@ async def chat():
 我们已经做了会话列表的查询，但是对于当前会话的会话历史查询，我们还没有实现
 
 
-#### 读取和删除会话状态
+#### 6.1 读取和删除会话状态
 - 见 [01-测试PostgreSQL的Checkpointer.py](01-%E6%B5%8B%E8%AF%95PostgreSQL%E7%9A%84Checkpointer.py)
-- [接口设计见 5.2](https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd)
+
 
 ```python
     # 1. 读取 State 快照 agent.aget_state(config)
@@ -269,6 +269,10 @@ async def chat():
         print("✅ 会话状态删除成功")
         print(snapshot)
 ```
+
+
+#### 接口设计
+- [接口设计见 5.2](https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd)
 
 
 
