@@ -13,17 +13,20 @@ from app.modules.chat_thread.router import chat_thread_router
 configure_logging(settings.logging.level)
 logger = get_logger(__name__)
 
-# 数据库连接池 - 生命周期管理
+# 生命周期管理
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"【{settings.app.name}】应用启动中...")
     from app.infra.database import check_database, close_database
     from app.infra.checkpointer import init_checkpointer, close_checkpointer
+    from app.agents.insurance_agent import init_insurance_agent
     try:
         # 1. 检查业务数据库连接
         await check_database()
         # 2. 初始化 checkpointer
         checkpointer = await init_checkpointer()
+        # 3. 初始化保险顾问 Agent
+        app.state.insurance_agent = init_insurance_agent(checkpointer) # 后续可以通过 request.app.state.insurance_agent 获取
         yield
     finally:
         logger.info("应用关闭中... ")

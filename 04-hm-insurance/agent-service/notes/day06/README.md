@@ -8,7 +8,7 @@
 
 
 
-### 二、`PostgreSql` 实现 Agent 短期记忆
+### 二、`PostgreSql checkpointer` 初始化， 并由 FastAPI 管理其生命周期
 用 `PostgreSql` 实现 `Checkpointer`，将会话状态（即快照链）持久化到数据库中
 
 #### 2.1 安装依赖
@@ -76,4 +76,94 @@ if __name__ == "__main__":
         reload=False,
         loop= "asyncio:SelectorEventLoop" if sys.platform == "win32" else "auto",  # 新增
     )
+```
+
+### 三、保险顾问 Agent 初始化， 并由 FastAPI 管理其生命周期
+
+#### 3.1 Agent 初始化 `app.agents.insurance_agent.py`
+```python
+from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+from app.core.config import settings
+from app.core.logging import get_logger
+logger = get_logger(__name__)
+
+
+SYSTEM_PROMPT = """
+你是“安心保”的智能保险顾问。
+你需要使用专业、准确、容易理解的语言回答用户的保险问题。
+当信息不足时，应先向用户追问，不要编造保险产品或保障内容。
+"""
+
+
+def init_insurance_agent(checkpointer: AsyncPostgresSaver):
+    """初始化保险顾问Agent"""
+    # 1.初始化模型
+    model = init_chat_model(
+        model=settings.llm.chat_model,
+        model_provider="deepseek",
+        api_key=settings.llm.api_key,
+        extra_body={"thinking": {"type": "disabled"}},
+    )
+
+    # 2.创建Agent
+    agent = create_agent(
+        model=model,
+        tools=[],
+        checkpointer=checkpointer,
+        system_prompt=SYSTEM_PROMPT,
+    )
+    logger.info("保险顾问 Agent 初始化成功~✅️")
+    return agent
+```
+
+#### 3.2 FastAPI 管理 Agent 生命周期 `app.main.py`
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info(f"【{settings.app.name}】应用启动中...")
+    from app.infra.database import check_database, close_database
+    from app.infra.checkpointer import init_checkpointer, close_checkpointer
+    from app.agents.insurance_agent import init_insurance_agent
+    try:
+        # 1. 检查业务数据库连接
+        await check_database()
+        # 2. 初始化 checkpointer
+        checkpointer = await init_checkpointer()
+        # 3. 初始化保险顾问 Agent
+        app.state.insurance_agent = init_insurance_agent(checkpointer)
+        yield
+    finally:
+        logger.info("应用关闭中... ")
+        # 3. 关闭 checkpointer 连接池
+        await close_checkpointer()
+        # 4. 关闭 SQLAlchemy 连接池
+        await close_database()
+```
+
+> 说明：
+> - `app.state` 是FastAPI的共享状态，用来保存与当前 FastAPI 应用实例共同存在的对象
+> - 后面实现对话接口时，可以通过 `request.app.state.agent` 获取这里创建的 Agent，不需要重新初始化
+
+推荐只用依赖注入的方式来获取 agent
+```python
+# app/deps.py
+from fastapi import Request, HTTPException
+
+def get_insurance_agent(request: Request):
+    agent = getattr(request.app.state, "insurance_agent", None)
+    if agent is None:
+        raise HTTPException(503, "Agent 未就绪")
+    return agent
+
+
+# 路由中使用
+from fastapi import Depends
+
+@app.post("/chat")
+async def chat(agent = Depends(get_insurance_agent)):
+    result = await agent.ainvoke(...)
+    return result
 ```
