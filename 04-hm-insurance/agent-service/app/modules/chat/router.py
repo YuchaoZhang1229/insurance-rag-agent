@@ -3,6 +3,7 @@
 """
 from typing import Annotated
 from fastapi import APIRouter, Depends, Header
+from fastapi.sse import EventSourceResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from langgraph.graph.state import CompiledStateGraph
 
@@ -23,12 +24,23 @@ def get_chat_service(
     return ChatService(session, agent)
 
 """ 需求1：基本对话 """
-@chat_router.post("/")
+@chat_router.post("/test")
 async def chat(
-        user_input: ChatRequest,
+        chat_request: ChatRequest,
         user_id: Annotated[int, Header(alias="x-user-id")],
         service: ChatService = Depends(get_chat_service)
     ):
-    logger.info(f"基本对话：thread_id：{user_input.thread_id}, message_in：{user_input.message}")
-    ai_message = await service.chat(user_input.thread_id, user_id, user_input.message)
+    ai_message = await service.chat(user_id, chat_request)
     return ai_message
+
+
+""" 需求2：流式对话 """
+@chat_router.post("/", response_class=EventSourceResponse)
+async def chat_stream(
+        chat_request: ChatRequest,
+        user_id: Annotated[int, Header(alias="x-user-id")],
+        service: ChatService = Depends(get_chat_service)
+    ):
+
+    async for ai_message in service.chat_stream(user_id, chat_request):
+        yield ai_message

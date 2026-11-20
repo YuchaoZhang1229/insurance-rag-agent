@@ -179,3 +179,67 @@ https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd
 - `router.py`：定义 HTTP 接口
 
 先试用 `ainvoke()`获取完整回复，验证对话接口，后续再把完整响应改成 SSE 流式响应
+
+### 五、FastAPI SSE 流式对话实现
+
+#### 5.1 什么是 SSE
+SSE（**S**erver-**S**ent **E**vents）是一种基于 HTTP 的**服务器向浏览器推送数据**的单向通信技术。浏览器用 `EventSource` API 建立长连接，服务器以 `text/event-stream` 格式持续发送文本事件
+- 单向：服务器 → 客户端 ;
+- 基于 HTTP/HTTPS
+- 浏览器 `EventSource` 原生支持自动重连
+- 适合：AI流式输出
+- 不适合：高频双向通信，双向通信用 WebSocket 更适合
+
+#### 5.2 SSE数据格式
+1. 特定的响应头
+
+| 响应头字段 | 必须值 | 作用说明 |
+| :--- | :--- | :--- |
+| `Content-Type` | `text/event-stream` | 告诉浏览器这是一个 SSE 数据流 |
+| `Cache-Control` | `no-cache` | 禁用缓存，确保数据实时更新 |
+| `X-Accel-Buffering`| `no` | **关键避坑**：禁用 Nginx 等反向代理的缓冲，否则流式效果会失效 |<websource>source_group_web_5</websource>
+
+2. 数据帧格式
+每个事件由字段组成，字段间用换行符分隔，**事件必须以两个换行符（\n\n）结尾**
+```text
+data: {"content": "你好"}\n\n
+```
+- `data`：事件携带的实际数据（通常是 JSON 字符串）。
+- `event`：自定义事件类型（可选，前端可通过 addEventListener 监听）。
+- `id`：事件 ID，用于断线重连时定位（可选）。
+- `retry`：浏览器重连等待时间（毫秒，可选）
+
+
+#### 5.3 FastAPI 实现 SSE
+在 FastAPI 中使用原生 SSE 支持，核心只需两步：
+- **声明响应类型**：在路由装饰器中，将 `response_class` 设置为 `EventSourceResponse`。
+- **封装返回数据**：在异步生成器中，使用 `ServerSentEvent` 对象封装数据并 `yield` 出去
+
+| 组件 | 来源 | 核心作用                                                                                                          |
+| :--- | :--- |:--------------------------------------------------------------------------------------------------------------|
+| `EventSourceResponse` | `fastapi.sse` | 继承自 `StreamingResponse`，自动设置 `text/event-stream`、`Cache-Control: no-cache` 和 `X-Accel-Buffering: no` |
+| `ServerSentEvent` | `fastapi.sse` | 数据封装类，支持 `data`、`event`、`id`、`retry` 等标准 SSE 字段                                                               |
+
+`ServerSentEvent` 的结构大概是这样：
+```pyhton
+class ServerSentEvent(BaseModel):
+    id: str
+    event: str
+    data: str
+    retry: int
+    # ...
+```
+只需要我们把结果封装为 `ServerSentEvent` 对象，FastAPI 即可帮我们以 SSE 需要的格式返回
+
+```python
+from fastapi.sse import EventSourceResponse, ServerSentEvent
+
+@app.post("", response_class=EventSourceResponse)
+async def chat():
+    """AI对话接口"""
+
+    # 用一个循环来模拟sse不断返回数据
+    for i in range(10):
+        yield ServerSentEvent(data=f"message_{i}", event="message")
+    yield ServerSentEvent(data="[DONE]", event="done")
+```
