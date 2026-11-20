@@ -19,7 +19,7 @@ class ChatService:
         self.repository = ChatThreadRepository(session)
         self.agent = agent
 
-    """ 需求1：基本对话 """
+    """ 需求1：阻塞对话 """
     async def chat(self, user_id: int, chat_request: ChatRequest):
         # 判断会话是否存在，且是否属于当前用户
         chat_thread = await self.repository.find_by_thread_id(chat_request.thread_id)

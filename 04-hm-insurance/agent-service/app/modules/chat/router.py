@@ -23,7 +23,7 @@ def get_chat_service(
     ):
     return ChatService(session, agent)
 
-""" 需求1：基本对话 """
+""" 需求1：阻塞对话 """
 @chat_router.post("/test")
 async def chat(
         chat_request: ChatRequest,
@@ -41,6 +41,6 @@ async def chat_stream(
         user_id: Annotated[int, Header(alias="x-user-id")],
         service: ChatService = Depends(get_chat_service)
     ):
-
+    # Generator：用 yield 不断生成内容，形成动态列表
     async for ai_message in service.chat_stream(user_id, chat_request):
         yield ai_message
