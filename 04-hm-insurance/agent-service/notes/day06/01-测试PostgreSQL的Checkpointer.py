@@ -69,5 +69,21 @@ async def main():
     for message in response['messages']:
         message.pretty_print()
 
+    # 1. 读取 State 快照 agent.aget_state(config)
+    # 获取会话的最新状态，即最后一次完成的会话历史
+    snapshot = await agent.aget_state(config)
+    print("✅ 会话状态获取成功")
+    print(snapshot)
+
+    # 2. 删除快照 checkpointer.adelete_thread(thread_id)
+    thread_id = config["configurable"]["thread_id"]
+    await checkpointer.adelete_thread(thread_id)
+
+
+    snapshot = await agent.aget_state(config)
+    if snapshot.values == {}:
+        print("✅ 会话状态删除成功")
+        print(snapshot)
+
 if __name__ == "__main__":
     asyncio.run(main())

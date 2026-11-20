@@ -185,7 +185,7 @@ https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd
 #### 5.1 什么是 SSE
 SSE（**S**erver-**S**ent **E**vents）是一种基于 HTTP 的**服务器向浏览器推送数据**的单向通信技术。浏览器用 `EventSource` API 建立长连接，服务器以 `text/event-stream` 格式持续发送文本事件
 - 单向：服务器 → 客户端 ;
-- 基于 HTTP/HTTPS
+- 基于 HTTP/HTTPS，使用 `text/event-stream` 格式
 - 浏览器 `EventSource` 原生支持自动重连
 - 适合：AI流式输出
 - 不适合：高频双向通信，双向通信用 WebSocket 更适合
@@ -215,10 +215,10 @@ data: {"content": "你好"}\n\n
 - **声明响应类型**：在路由装饰器中，将 `response_class` 设置为 `EventSourceResponse`。
 - **封装返回数据**：在异步生成器中，使用 `ServerSentEvent` 对象封装数据并 `yield` 出去
 
-| 组件 | 来源 | 核心作用                                                                                                          |
-| :--- | :--- |:--------------------------------------------------------------------------------------------------------------|
-| `EventSourceResponse` | `fastapi.sse` | 继承自 `StreamingResponse`，自动设置 `text/event-stream`、`Cache-Control: no-cache` 和 `X-Accel-Buffering: no` |
-| `ServerSentEvent` | `fastapi.sse` | 数据封装类，支持 `data`、`event`、`id`、`retry` 等标准 SSE 字段                                                               |
+| 组件 | 来源 | 核心作用                                                                                                        |
+| :--- | :--- |:------------------------------------------------------------------------------------------------------------|
+| `EventSourceResponse` | `fastapi.sse` | 封装响应类型，继承自 `StreamingResponse`，自动设置 `text/event-stream`、`Cache-Control: no-cache` 和 `X-Accel-Buffering: no` |
+| `ServerSentEvent` | `fastapi.sse` | 封装数据格式，支持 `data`、`event`、`id`、`retry` 等标准 SSE 字段                                                            |
 
 `ServerSentEvent` 的结构大概是这样：
 ```pyhton
@@ -243,3 +243,52 @@ async def chat():
         yield ServerSentEvent(data=f"message_{i}", event="message")
     yield ServerSentEvent(data="[DONE]", event="done")
 ```
+
+### 六、利用 `Checkpointer` 实现会话历史管理
+我们已经做了会话列表的查询，但是对于当前会话的会话历史查询，我们还没有实现
+
+
+#### 读取和删除会话状态
+- 见 [01-测试PostgreSQL的Checkpointer.py](01-%E6%B5%8B%E8%AF%95PostgreSQL%E7%9A%84Checkpointer.py)
+- [接口设计见 5.2](https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd)
+
+```python
+    # 1. 读取 State 快照 agent.aget_state(config)
+    # 获取会话的最新状态，即最后一次完成的会话历史
+    snapshot = await agent.aget_state(config)
+    print("✅ 会话状态获取成功")
+    print(snapshot)
+
+    # 2. 删除快照 checkpointer.adelete_thread(thread_id)
+    thread_id = config["configurable"]["thread_id"]
+    await checkpointer.adelete_thread(thread_id)
+
+
+    snapshot = await agent.aget_state(config)
+    if snapshot.values == {}:
+        print("✅ 会话状态删除成功")
+        print(snapshot)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
