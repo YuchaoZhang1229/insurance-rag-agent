@@ -9,12 +9,12 @@
 
 ## 一、认识 Agent
 
-### 什么是 Agent？
+### 1.1 什么是 Agent？
 **Agent**（通常称为**智能体**或**代理**）是一种能**感知环境、进行自主推理和决策、并调用工具以实现特定目标的智能系统**
 
 Agent = LLM + 规划 + 工具 + 迭代执行 + 记忆
 
-### Tool Calling 原理
+### 1.2 Tool Calling 原理
 **工具是在本地自已定义的，而模型则是在服务器上运行的**
 > 那么问题来了: 
 > - 模型如何知道我们有哪些工具？ ——> （给模型发）函数说明、函数名、函数参数
@@ -66,8 +66,29 @@ LangChian的MCP依赖库
 uv add langchain-mcp-adapter
 ```
 
+## 四、会话记忆
+
+### 4.1 短期记忆 vs 长期记忆
+
+| 对比维度 | 短期记忆        | 长期记忆         |
+| :--- |:------------|:-------------|
+| **生命周期** | 当前会话（短暂）    | 跨任务、跨会话（永久）  |
+| **内容** | 会话历史、任务状态   | 知识库、经验、用户偏好  |
+| **是否跨任务** | ❌           | ✅            |
+| **存储** | Redis/内存/DB | DB/Vector DB |
 
 
+
+### 4.2 短期记忆介绍
+**短期记忆 =  `State` 中 `messages` 字段 + `Checkpointer` 状态快照 + `thread_id` 会话隔离**
+- **AgentState（状态容器）**：本质是一个带 `reducer` 的 `TypedDict`
+- **Checkpointer（快照持久化）**：每次与AI交互都会生成一个快照，在 LangChain 中，快照是通过 `Checkpointer` 对象来保存的
+- **thread_id**：会话标识，用于区分不同会话
+
+在 LangChain 中， 快照都是通过 `Checkpointer` 对象来保存的，它有很多不同的实现：
+- `InMemorySaver`：基于内存存储
+- `SqliteSaver`：基于 sqlite 数据库存储
+- `PostgreSaver`：基于 PostgreSql 数据存储
 
 
 
