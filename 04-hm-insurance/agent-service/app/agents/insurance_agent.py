@@ -1,3 +1,4 @@
+from fastapi import Request, HTTPException
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -32,4 +33,10 @@ def init_insurance_agent(checkpointer: AsyncPostgresSaver):
         system_prompt=SYSTEM_PROMPT,
     )
     logger.info("保险顾问 Agent 初始化成功~✅️")
+    return agent
+
+def get_insurance_agent(request: Request):
+    agent = getattr(request.app.state, "insurance_agent", None)
+    if agent is None:
+        raise HTTPException(503, "Agent 未就绪")
     return agent

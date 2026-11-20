@@ -167,3 +167,15 @@ async def chat(agent = Depends(get_insurance_agent)):
     result = await agent.ainvoke(...)
     return result
 ```
+
+### 四、保险顾问 Agent 基础对话接口实现
+https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd
+
+见 3.1 接口设计
+
+创建会话模块 `app.modules.chat`
+- `schemas.py`：定义请求和响应模型
+- `service.py`：校验会话并调用 Agent
+- `router.py`：定义 HTTP 接口
+
+先试用 `ainvoke()`获取完整回复，验证对话接口，后续再把完整响应改成 SSE 流式响应

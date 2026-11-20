@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager                     # 数据库连接
 from app.core.exceptions import register_exception_handlers    # 异常处理注册
 from app.modules.product.router import product_router
 from app.modules.chat_thread.router import chat_thread_router
+from app.modules.chat.router import chat_router
 
 
 # 初始化日志系统
@@ -54,6 +55,7 @@ app.add_middleware(
 # 路由注册
 app.include_router(product_router)
 app.include_router(chat_thread_router)
+app.include_router(chat_router)
 
 # 全局异常处理注册
 register_exception_handlers(app)
