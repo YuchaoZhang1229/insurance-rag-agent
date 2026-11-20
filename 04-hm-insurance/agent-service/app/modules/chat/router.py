@@ -7,7 +7,7 @@ from fastapi.sse import EventSourceResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agents.insurance_agent import get_insurance_agent
+from app.agents.insurance_advisor_agent import get_insurance_agent
 from app.infra.database import get_db
 from app.modules.chat.service import ChatService
 from app.modules.chat.schemas import ChatRequest

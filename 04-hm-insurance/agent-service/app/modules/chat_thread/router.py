@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from langgraph.graph.state import CompiledStateGraph
-from app.agents.insurance_agent import get_insurance_agent
+from app.agents.insurance_advisor_agent import get_insurance_agent
 from app.infra.database import get_db
 from app.core.logging import get_logger
 from app.modules.chat_thread.service import ChatThreadService

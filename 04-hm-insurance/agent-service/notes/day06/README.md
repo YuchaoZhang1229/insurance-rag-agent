@@ -120,13 +120,14 @@ def init_insurance_agent(checkpointer: AsyncPostgresSaver):
 ```
 
 #### 3.2 FastAPI 管理 Agent 生命周期 `app.main.py`
+
 ```python
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"【{settings.app.name}】应用启动中...")
     from app.infra.database import check_database, close_database
     from app.infra.checkpointer import init_checkpointer, close_checkpointer
-    from app.agents.insurance_agent import init_insurance_agent
+    from app.agents.insurance_advisor_agent import init_insurance_agent
     try:
         # 1. 检查业务数据库连接
         await check_database()
@@ -273,6 +274,11 @@ async def chat():
 
 #### 接口设计
 - [接口设计见 5.2](https://my.feishu.cn/wiki/YNPIwHSgCimOfUkDpvxcuVpJntd)
+
+
+
+
+### 七、保险工具查询
 
 
 
