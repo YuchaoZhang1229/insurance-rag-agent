@@ -43,17 +43,25 @@ class DatabaseSettings(EnvSettings):
     max_overflow: int = Field(alias="DB_MAX_OVERFLOW", default=10)             ### 新增
     pool_recycle: int = Field(alias="DB_POOL_RECYCLE", default=1800)           ### 新增
 
-    @computed_field
-    @property
-    def url(self) -> str: # url = postgresql+asyncpg://insurance:insurance123@localhost:5432/insurance
-        # 自动拼接URL路径
+    def build_url(self, scheme: str) -> str:
         return PostgresDsn.build(
-            scheme="postgresql+asyncpg", # postgres数据库 + asyncpg 异步驱动连接
+            scheme=scheme,
             host=self.host,
             port=self.port,
             username=self.user,
-            password=self.password
+            password=self.password,
+            path=self.name,
         ).encoded_string()
+
+    @computed_field
+    @property
+    def url(self) -> str: # url = postgresql+asyncpg://insurance:insurance123@localhost:5432/insurance
+        return self.build_url("postgresql+asyncpg")
+
+    @computed_field
+    @property
+    def checkpoint_url(self) -> str: # url = postgresql://insurance:insurance123@localhost:5432/insurance
+        return self.build_url("postgresql")
 
 class LLMSettings(EnvSettings):
     """模型相关配置"""
