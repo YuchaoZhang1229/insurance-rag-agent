@@ -33,7 +33,7 @@ AsyncSessionFactory = async_sessionmaker(
     expire_on_commit=False, # commit 后保留 ORM 对象中的属性值
 )
 
-# 4. 获取session的工具
+# 4. 获取session的工具（FastAPI专用）
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """ 为每个 FastAPI 请求创建独立的 AsyncSession，适用于依赖注入。后续作为参数使用 db: AsyncSession = Depends(get_db)"""
     async with AsyncSessionFactory() as session:
