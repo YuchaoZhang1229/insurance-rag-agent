@@ -320,15 +320,78 @@ async def query_candidate_products(
 
 ```
 
+### 八、保存保险方案（了解）
+上述生成的保险推荐方案，还仅仅处于当前会话中，用户关闭页面后，系统很难继续查询或使用它。因此，我们还要把生成的方案转换成结构化数据并保存到数据库，为后续的方案确认、方案查询和投保功能做好准备
 
 
+#### 8.1 表结构
+
+| 数据表 | 一条记录表示 | 主要记录内容 |
+| :--- | :--- | :--- |
+| `insurance_plans` | 一份完整方案 | 方案属于哪个用户、用户画像、方案名称、整体说明、总预算和投保状态 |
+| `insurance_plan_items` | 方案中的一款产品 | 所属方案、推荐产品、展示顺序、推荐理由、2预算和投保状态 |
+
+insurance_plans
+
+| 字段 | 含义 |
+| :--- | :--- |
+| `id` | 方案 ID |
+| `user_id` | 方案所属用户 |
+| `plan_name` | 方案名称 |
+| `summary` | 方案整体说明 |
+| `insured_profile` | 生成方案时使用的用户画像 |
+| `annual_premium_budget` | 所有方案项的年缴预算合计 |
+| `status` | 整份方案的投保状态 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
+
+insurance_plan_items
+
+| 字段 | 含义 |
+| :--- | :--- |
+| `id` | 方案项 ID |
+| `plan_id` | 所属方案 |
+| `product_id` | 推荐的保险产品 |
+| `priority` | 产品在方案中的展示顺序 |
+| `recommendation_reason` | 推荐理由 |
+| `annual_premium_budget` | 分配给该产品的年缴预算 |
+| `status` | 该产品的投保状态 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
 
 
+一份方案可以关联多个不同产品。保存时先写入 `insurance_plans` 得到方案 ID，再把每款产品分别写入 `insurance_plan_items`，并通过 `plan_id` 关联到同一份方案
 
 
+#### 8.2 创建保险方案模块
+`app.modules.insurance_plan`
+```text
+app/
+├── agents/
+│   ├── insurance_advisor.py
+│   └── tools.py
+└── modules/
+    └── insurance_plan/
+        ├── __init__.py
+        ├── models.py
+        ├── schemas.py
+        ├── repository.py
+        └── service.py
+```
 
 
+#### 8.3 自定义 context
+保存保险方案时必须知道方案属于哪个用户。但 `user_id` 不能定义成普通工具参数，否则大模型可以自行生成任意用户 ID，导致方案保存到错误用户
 
+
+在LangChain中，提供了 `Context` 用来向一次 Agent 调用传递外部环境信息，例如`当前用户`、`权限`等。它可以传递给tool，并且不会作为工具参数暴露给大模型
+```python
+from dataclasses import dataclass
+@dataclass(frozen=True)
+class InsuranceAgentContext:
+    """保险顾问Agent运行时上下文"""
+    user_id: int
+```
 
 
 

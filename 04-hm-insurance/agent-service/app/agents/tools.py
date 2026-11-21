@@ -27,5 +27,8 @@ async def query_candidate_products(
     async with AsyncSessionFactory() as db:
         product_service = ProductService(db)
         products: list[Products] = await product_service.get_candidate_products(categories, premium_min, limit_per_category)
+    # from app.modules.product.schemas import ProductResponse
+    # return [ProductResponse.model_validate(product).model_dump_json() for product in products]
     return jsonable_encoder(products) # 把 list[Products] 转换为 JSON 格式
+
 
