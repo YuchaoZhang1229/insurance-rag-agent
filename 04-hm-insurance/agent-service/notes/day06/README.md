@@ -278,11 +278,47 @@ async def chat():
 
 
 
-### 七、保险工具查询
+### 七、定义候选保险产品查询工具
+目前保险顾问 Agent 只能依靠大模型自身知识回答问题，无法读取项目数据库中的真实保险产品
+- `app.agents.insurance_advisor_agent.py`：负责初始化并组装保险顾问 Agent
+- `app.agents.tools.py`：具体工具
 
 
 
+```python
+from decimal import Decimal
+from fastapi.encoders import jsonable_encoder
 
+from langchain_core.tools import tool
+from app.modules.product.models import Products
+from app.modules.product.service import ProductService
+from app.infra.database import AsyncSessionFactory
+
+from app.core.logging import get_logger
+logger = get_logger(__name__)
+
+
+
+@tool
+async def query_candidate_products(
+        categories: list[str],
+        premium_min: Decimal | None = None,
+        limit_per_category: int = 5
+    ) -> list[Products]:
+    """ 根据险种和保费条件查询可用于推荐的候选保险产品。当用户咨询具体保险产品或需要保险产品推荐时使用。
+    Args:
+    categories：产品分类列表，可选值为 medical、critical_illness、life、accident。
+    premium_min：最低保费上限，可选参数，只返回最低保费小于该值的产品。
+    limit_per_category：每个险种最多返回的产品数量，可选参数，默认5。
+    """
+    logger.info(f"调用查询候选产品工具：categories: {categories}, premium_min: {premium_min}, limit_per_category: {limit_per_category}")
+    async with AsyncSessionFactory() as db:
+        product_service = ProductService(db)
+        products: list[Products] = await product_service.get_candidate_products(categories, premium_min, limit_per_category)
+    return jsonable_encoder(products) # 把 list[Products] 转换为 JSON 格式
+
+
+```
 
 
 
